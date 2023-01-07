@@ -14,10 +14,13 @@ print(cv.__version__)
 
 parser = argparse.ArgumentParser(description='Object Detection using YOLO in OPENCV')
 parser.add_argument('--image', help='Path to image file.')
-parser.add_argument('--video', help='Path to video file.')
+#parser.add_argument('--video', help='Path to video file.')
+parser.add_argument('--screenshots', action="store_true")
 
 args = parser.parse_args()
 
+def drawLabel(image, x, y, name):
+    cv.putText(image, name, (x - 20, y), cv.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 255), 2)
 
 # Remove the bounding boxes with low confidence using non-maxima suppression
 def postprocess(frame, outs):
@@ -51,48 +54,50 @@ def postprocess(frame, outs):
             max_area = cv.contourArea(cont)
 
     cv.drawContours(frame, [cnt], 0, (0,255,0), 1)
+    
     x,y,w,h = cv.boundingRect(cnt)
+
+    drawLabel(frame,x,y, "stagger bar")
     print("width: " + str(w))
     print("Stagger: " +str(532-w))
 #    cv.imshow(winName, binary) 
     return 532-w
 
+def drawLabel(image, x, y, name):
+    cv.putText(image, name, (x - 20, y), cv.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 255), 1)
 
 # Process inputs
 winName = 'Deep learning object detection in OpenCV'
 #cv.namedWindow(winName, cv.WINDOW_NORMAL)
 cv.namedWindow(winName)
-outputFile = "check_results.avi"
-if (args.image):
+namearray=[]
+if(args.screenshots):
+    print
+    for namefile in [f for f in os.listdir("screenshots") if (f.endswith('.png') or f.endswith('.jpg'))]:
+        if not os.path.isfile("screenshots/"+namefile):
+            print("Input image file ", args.image, " doesn't exist")
+        else:
+            namearray.append("screenshots/"+namefile)
+elif (args.image):
     # Open the image file
     if not os.path.isfile(args.image):
         print("Input image file ", args.image, " doesn't exist")
         sys.exit(1)
-    cap = cv.VideoCapture(args.image)
-    hasFrame, frame = cap.read()
-    outputFile = args.image[:-4]+'_check_results.jpg'
-elif (args.video):
-    # Open the video file
-    if not os.path.isfile(args.video):
-        print("Input video file ", args.video, " doesn't exist")
-        sys.exit(1)
-    cap = cv.VideoCapture(args.video)
-    outputFile = args.video[:-4]+'_check_results.avi'
+    namearray.append(args.image)
 else:
     print("Input image file doesn't exist")
     sys.exit(1)
 
-# Get the video writer initialized to save the output video
-if (not args.image):
-    vid_writer = cv.VideoWriter(outputFile, cv.VideoWriter_fourcc('M','J','P','G'), 30, (round(cap.get(cv.CAP_PROP_FRAME_WIDTH)),round(cap.get(cv.CAP_PROP_FRAME_HEIGHT))))
+outputFile="default.jpg"
+outputFolder="calculatedstagger/"
 
 
-
-
-while cv.waitKey(1) < 0:
-    
+for n in namearray:
+    cap = cv.VideoCapture(n)
+    filename = n[12:-4]
+    hasFrame, frame = cap.read()
     # get frame from the video
-    if not (args.image):
+    if not (args.image or args.screenshots):
         hasFrame, frame = cap.read()
 
     # Stop the program if reached end of video
@@ -112,42 +117,17 @@ while cv.waitKey(1) < 0:
     print(frameheight)
     #print()
 
-    # # Create a 4D blob from a frame.
-    # blob = cv.dnn.blobFromImage(frame, 1/255, (inpWidth, inpHeight), [0,0,0], 1, crop=False)
-
-    # # Sets the input to the network
-    # net.setInput(blob)
-
-    # # Runs the forward pass to get output of the output layers
-    # outs = net.forward(getOutputsNames(net))
-
-    # # Remove the bounding boxes with low confidence
     outs = "this is a test for contour only"
     showtime = postprocess(frame, outs)
     cv.imshow(winName, frame)
 
     if showtime != None:
-        print("contour found")
-
-
-    cv.waitKey(5000)
-    frame=framecopy
-        #is check more than 1/8th the photo but less than 95% of the photo
-        #if checkheight*checkwidth * 8 > frameheight * framewidth and checkheight*checkwidth * 1.05 < frameheight * framewidth:
-        #    cv.waitKey(3000)
-            #yesno = input("Does this look good to you? (y)? ")
-    # Put efficiency information. The function getPerfProfile returns the overall time for inference(t) and the timings for each of the layers(in layersTimes)
-    #t, _ = net.getPerfProfile()
-    #label = 'Inference time: %.2f ms' % (t * 1000.0 / cv.getTickFrequency())
-    #cv.putText(frame, label, (0, 15), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255))
-    # Write the frame with the detection boxes
-
-"""     if (args.image):
-        v.imwrite(outputFile, detections.astype(np.uint8))
-        #retval, framejpg = cv.imencode(".jpg",frame)
-        #b64txt = base64.b64encode(framejpg)
-        #b64txt = b64txt.decode("utf-8")
-        #print(b64txt)
-    else:
-        vid_writer.write(frame.astype(np.uint8))
- """
+        if(args.screenshots):
+            outputFileNow=outputFolder+filename+"px_"+str(showtime)+".jpg"
+            print(outputFileNow)
+            cv.imwrite(outputFileNow, frame.astype(np.uint8))
+        elif (args.image):
+            outputFileNow=filename+"px_"+str(showtime)+".jpg"
+            print(outputFileNow)
+            cv.imwrite(outputFileNow, frame.astype(np.uint8))
+        
