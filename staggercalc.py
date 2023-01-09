@@ -58,6 +58,8 @@ def postprocess(frame, outs):
     x,y,w,h = cv.boundingRect(cnt)
 
     drawLabel(frame,x,y, "stagger bar")
+    if(h != 5):
+        print("height: " + str(h)+"; should be 5, usually.")
     print("width: " + str(w))
     print("Stagger: " +str(532-w))
 #    cv.imshow(winName, binary) 
@@ -72,7 +74,6 @@ winName = 'Deep learning object detection in OpenCV'
 cv.namedWindow(winName)
 namearray=[]
 if(args.screenshots):
-    print
     for namefile in [f for f in os.listdir("screenshots") if (f.endswith('.png') or f.endswith('.jpg'))]:
         if not os.path.isfile("screenshots/"+namefile):
             print("Input image file ", args.image, " doesn't exist")
@@ -93,21 +94,15 @@ outputFolder="calculatedstagger/"
 
 
 for n in namearray:
-    cap = cv.VideoCapture(n)
-    filename = n[12:-4]
-    hasFrame, frame = cap.read()
+    print(n)
+    if args.screenshots:
+        filename = n[12:-4]
+    else:
+        filename = n[:-4]
+    frame = cv.imread(n)
     # get frame from the video
     if not (args.image or args.screenshots):
-        hasFrame, frame = cap.read()
-
-    # Stop the program if reached end of video
-    if not hasFrame:
-        print("Done processing !!!")
-        print("Output file is stored as ", outputFile)
-        cv.waitKey(3000)
-        # Release device
-        cap.release()
-        break
+        frame = cv.imread(n)
 
     framecopy = frame.copy()
     framewidth = int(frame.shape[1])
@@ -119,7 +114,7 @@ for n in namearray:
 
     outs = "this is a test for contour only"
     showtime = postprocess(frame, outs)
-    cv.imshow(winName, frame)
+    #cv.imshow(winName, frame)
 
     if showtime != None:
         if(args.screenshots):
